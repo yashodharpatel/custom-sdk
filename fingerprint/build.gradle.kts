@@ -64,7 +64,7 @@ android {
         }
     }
 
-    namespace = "com.yashodharpatel.custom-sdk"
+    namespace = "com.fingerprintjs.android.fingerprint"
 
     libraryVariants.all {
         val variantName = this.name
