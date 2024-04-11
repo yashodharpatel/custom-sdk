@@ -6,7 +6,7 @@ plugins {
     id("maven-publish")
 }
 
-group = "com.github.fingerprintjs"
+group = "com.github.yashodharpatel"
 
 fun libraryOutputName(variantName: String): String {
     return "fingerprint-android-${project.property("VERSION_NAME")}-${variantName}.aar"
@@ -15,7 +15,7 @@ fun libraryOutputName(variantName: String): String {
 publishing {
     publications {
         create<MavenPublication>("fpRelease") {
-            groupId = "com.github.fingerprintjs"
+            groupId = "com.github.yashodharpatel"
             artifactId = "fingerprint-android"
             version = project.property("VERSION_NAME") as String
             afterEvaluate {
@@ -64,7 +64,7 @@ android {
         }
     }
 
-    namespace = "com.fingerprintjs.android.fingerprint"
+    namespace = "com.yashodharpatel.custom-sdk"
 
     libraryVariants.all {
         val variantName = this.name
