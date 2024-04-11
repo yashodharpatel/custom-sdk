@@ -1,0 +1,15 @@
+<resources>
+
+    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar" />
+
+    <style name="AppBaseSplashTheme" parent="Theme.SplashScreen">
+        <item name="postSplashScreenTheme">@style/AppTheme</item>
+        <item name="windowSplashScreenBackground">@color/primary_99</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_fingerprint_splash</item>
+    </style>
+
+    <style name="AppSplashTheme" parent="AppBaseSplashTheme">
+        <item name="android:statusBarColor">@color/onBackground</item>
+    </style>
+
+</resources>

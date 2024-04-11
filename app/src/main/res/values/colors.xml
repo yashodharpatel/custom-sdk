@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Duplications from app theme -->
+    <color name="primary_99">#fffff8f6</color>
+    <color name="onBackground">#ff0a0a0a</color>
+</resources>
