@@ -4,6 +4,7 @@ import androidx.annotation.WorkerThread
 import com.fingerprintjs.android.fingerprint.device_id_signals.DeviceIdSignalsProvider
 import com.fingerprintjs.android.fingerprint.fingerprinting_signals.FingerprintingSignal
 import com.fingerprintjs.android.fingerprint.fingerprinting_signals.FingerprintingSignalsProvider
+import com.fingerprintjs.android.fingerprint.info_providers.OsBuildInfoProvider
 import com.fingerprintjs.android.fingerprint.signal_providers.SignalGroupProvider
 import com.fingerprintjs.android.fingerprint.signal_providers.StabilityLevel
 import com.fingerprintjs.android.fingerprint.signal_providers.device_id.DeviceIdProvider
@@ -15,15 +16,20 @@ import com.fingerprintjs.android.fingerprint.tools.DeprecationMessages
 import com.fingerprintjs.android.fingerprint.tools.FingerprintingLegacySchemeSupportExtensions
 import com.fingerprintjs.android.fingerprint.tools.hashers.Hasher
 import com.fingerprintjs.android.fingerprint.tools.threading.safe.safe
+import kotlin.coroutines.coroutineContext
 
 
 internal class FingerprinterImpl internal constructor(
     private val legacyArgs: Fingerprinter.LegacyArgs?,
     private val fpSignalsProvider: FingerprintingSignalsProvider,
     private val deviceIdSignalsProvider: DeviceIdSignalsProvider,
-) {
+    private val OSSignalsProvider: OsBuildInfoProvider,
+    ) {
     @Volatile
     private var deviceIdResult: DeviceIdResult? = null
+
+    private var OSResult: OSResult? = null
+
 
     @Volatile
     private var fingerprintResult: FingerprintResult? = null
@@ -47,6 +53,25 @@ internal class FingerprinterImpl internal constructor(
     }
 
     @WorkerThread
+    @Deprecated(DeprecationMessages.DEPRECATED_SYMBOL)
+    fun getOS(): Result<OSResult> {
+        require(legacyArgs != null)
+
+        return safe {
+            OSResult?.let { return@safe it }
+            val osResult = OSResult(
+                legacyArgs.osBuildSignalProvider.rawData().kernelVersion,
+                legacyArgs.osBuildSignalProvider.rawData().androidVersion,
+                legacyArgs.osBuildSignalProvider.rawData().sdkVersion,
+                legacyArgs.osBuildSignalProvider.rawData().fingerprint
+            )
+            this.OSResult = osResult
+            osResult
+        }
+    }
+
+
+    @WorkerThread
     fun getDeviceId(version: Fingerprinter.Version): Result<DeviceIdResult> {
         return safe {
             DeviceIdResult(
@@ -57,6 +82,19 @@ internal class FingerprinterImpl internal constructor(
             )
         }
     }
+
+    @WorkerThread
+    fun getOS(version: Fingerprinter.Version): Result<OSResult> {
+        return safe {
+            OSResult(
+                kernel = OSSignalsProvider.kernelVersion(),
+                android = OSSignalsProvider.androidVersion(),
+                sdk = OSSignalsProvider.sdkVersion(),
+                fingerprint = OSSignalsProvider.fingerprint(),
+            )
+        }
+    }
+
 
     @WorkerThread
     @Deprecated(DeprecationMessages.DEPRECATED_SYMBOL)

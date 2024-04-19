@@ -116,6 +116,7 @@ public object FingerprinterFactory {
                     ),
                     fpSignalsProvider = createFingerprintingSignalsProvider(context),
                     deviceIdSignalsProvider = createDeviceIdSignalsProvider(context),
+                    OSSignalsProvider = createOSSignalsProvider(context)
                 )
             },
             isLegacyFactory = true,
@@ -131,6 +132,7 @@ public object FingerprinterFactory {
                     legacyArgs = null,
                     fpSignalsProvider = createFingerprintingSignalsProvider(context),
                     deviceIdSignalsProvider = createDeviceIdSignalsProvider(context),
+                    OSSignalsProvider = createOSSignalsProvider(context)
                 )
             },
             isLegacyFactory = false,
@@ -287,6 +289,10 @@ public object FingerprinterFactory {
             androidIdProvider = createAndroidIdProvider(context),
             mediaDrmIdProvider = createMediaDrmProvider(),
         )
+    }
+
+    private fun createOSSignalsProvider(context: Context): OsBuildInfoProvider {
+        return OsBuildInfoProviderImpl()
     }
 
     //endregion

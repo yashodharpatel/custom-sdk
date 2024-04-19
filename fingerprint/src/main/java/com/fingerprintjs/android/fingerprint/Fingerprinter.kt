@@ -61,6 +61,18 @@ public class Fingerprinter internal constructor(
         ) { getDeviceId() }
     }
 
+    public fun getOS(listener: (OSResult) -> Unit) {
+        checkThisLegacyMethodSupported()
+
+        runFingerprinterImplOnAnotherThread(
+            onError = {
+                listener.invoke(DummyResults.osResult)
+                Logger.ePleaseReport(it)
+            },
+            onSuccess = listener,
+        ) { getOS() }
+    }
+
     /**
      * Retrieve the device ID information.
      *
@@ -80,6 +92,18 @@ public class Fingerprinter internal constructor(
             onSuccess = listener,
         ) { getDeviceId(version) }
     }
+
+
+    public fun getOS(version: Version, listener: (OSResult) -> Unit) {
+        runFingerprinterImplOnAnotherThread(
+            onError = {
+                listener.invoke(DummyResults.osResult)
+                Logger.ePleaseReport(it)
+            },
+            onSuccess = listener,
+        ) { getOS(version) }
+    }
+
 
     /**
      * Retrieve the device fingerprint information.
@@ -286,4 +310,11 @@ public data class DeviceIdResult(
     val gsfId: String,
     val androidId: String,
     val mediaDrmId: String,
+)
+
+public data class OSResult(
+    val kernel: String,
+    val android: String,
+    val sdk: String,
+    val fingerprint: String,
 )
