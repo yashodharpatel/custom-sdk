@@ -149,6 +149,38 @@ public class FingerprintingSignalsProvider internal constructor(
         }
     }
 
+    @WorkerThread
+    public fun getOsBuildSignals(
+        version: Fingerprinter.Version,
+        stabilityLevel: StabilityLevel,
+    ): List<FingerprintingSignal<*>> {
+//        require(version < Fingerprinter.Version.fingerprintingFlattenedSignalsFirstVersion)
+        return when (version) {
+            Fingerprinter.Version.V_1 -> {
+                listOf(
+                    FingerprintSignal.info to { fingerprintSignal },
+                )
+            }
+            else -> {
+                listOf(
+                    AndroidVersionSignal.info to { androidVersionSignal },
+                    SdkVersionSignal.info to { sdkVersionSignal },
+                    KernelVersionSignal.info to { kernelVersionSignal },
+                    EncryptionStatusSignal.info to { encryptionStatusSignal },
+                    SecurityProvidersSignal.info to { securityProvidersSignal },
+                    CodecListSignal.info to { codecListSignal },
+                )
+            }
+        }.mapNotNull {
+            SignalsUtils.createSignalIfNeeded(
+                requiredVersion = version,
+                requiredStabilityLevel = stabilityLevel,
+                signalFingerprintingInfo = it.first,
+                signalFactory = it.second,
+            )
+        }
+    }
+
     @get:WorkerThread
     public val manufacturerNameSignal: ManufacturerNameSignal by lazy {
         ManufacturerNameSignal(osBuildInfoProvider.manufacturerName())
