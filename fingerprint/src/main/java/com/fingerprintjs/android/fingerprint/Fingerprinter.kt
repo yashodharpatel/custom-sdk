@@ -4,6 +4,7 @@ import androidx.annotation.Discouraged
 import androidx.annotation.WorkerThread
 import com.fingerprintjs.android.fingerprint.fingerprinting_signals.FingerprintingSignal
 import com.fingerprintjs.android.fingerprint.fingerprinting_signals.FingerprintingSignalsProvider
+import com.fingerprintjs.android.fingerprint.info_providers.CpuInfo
 import com.fingerprintjs.android.fingerprint.signal_providers.SignalGroupProvider
 import com.fingerprintjs.android.fingerprint.signal_providers.StabilityLevel
 import com.fingerprintjs.android.fingerprint.signal_providers.device_id.DeviceIdProvider
@@ -73,6 +74,18 @@ public class Fingerprinter internal constructor(
         ) { getOS() }
     }
 
+    public fun getCPU(listener: (OSResult) -> Unit) {
+        checkThisLegacyMethodSupported()
+
+        runFingerprinterImplOnAnotherThread(
+            onError = {
+                listener.invoke(DummyResults.osResult)
+                Logger.ePleaseReport(it)
+            },
+            onSuccess = listener,
+        ) { getOS() }
+    }
+
     /**
      * Retrieve the device ID information.
      *
@@ -102,6 +115,16 @@ public class Fingerprinter internal constructor(
             },
             onSuccess = listener,
         ) { getOS(version) }
+    }
+
+    public fun getCPU(version: Version, listener: (CPUResult) -> Unit) {
+        runFingerprinterImplOnAnotherThread(
+            onError = {
+                listener.invoke(DummyResults.CPUResult)
+                Logger.ePleaseReport(it)
+            },
+            onSuccess = listener,
+        ) { getCPU(version) }
     }
 
 
@@ -317,4 +340,11 @@ public data class OSResult(
     val android: String,
     val sdk: String,
     val fingerprint: String,
+)
+
+public data class CPUResult(
+    val cpuInfo: Map<String, String>,
+    val cpuInfo2: CpuInfo,
+    val abiType: String,
+    val coreCount: Int,
 )
