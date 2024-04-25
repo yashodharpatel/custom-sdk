@@ -103,6 +103,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java) {
 }
 
 dependencies {
+    implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:${Constants.kotlinVersion}")
     implementation("androidx.appcompat:appcompat:1.6.1")
     testImplementation("junit:junit:4.13.2")

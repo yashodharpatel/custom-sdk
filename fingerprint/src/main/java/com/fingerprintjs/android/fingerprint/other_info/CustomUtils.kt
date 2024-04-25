@@ -1,7 +1,5 @@
 package com.fingerprintjs.android.fingerprint.other_info
 
-import android.Manifest
-import android.app.Activity
 import android.app.ActivityManager
 import android.content.ClipboardManager
 import android.content.Context
@@ -23,192 +21,216 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.WindowManager
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import com.google.android.gms.ads.identifier.AdvertisingIdClient
+import com.fingerprintjs.android.fingerprint.Fingerprinter
+import com.fingerprintjs.android.fingerprint.FingerprinterFactory
+import com.fingerprintjs.android.fingerprint.signal_providers.StabilityLevel
+import com.fingerprintjs.android.fingerprint.toFingerprintItemData
+import com.google.gson.Gson
 import java.io.File
 import java.security.MessageDigest
 import java.util.Locale
 import java.util.TimeZone
 import java.util.UUID
 
-
 public class CustomUtils {
     public companion object {
         public fun collectDeviceInfo(context: Context): List<DeviceInfoItem> {
             val deviceInfoList = mutableListOf<DeviceInfoItem>()
+            val fingerPrinter = FingerprinterFactory.create(context)
 
-            // Add device information
-            deviceInfoList.add(DeviceInfoItem("Is Mute", CustomUtils.isMute(context).toString()))
+            // Usage
+            fingerPrinter.getFingerprint(version = Fingerprinter.Version.V_5) { fingerprint ->
+                deviceInfoList.add(DeviceInfoItem("Fingerprint", fingerprint))
+            }
+
+            fingerPrinter.getDeviceId(version = Fingerprinter.Version.V_5) { result ->
+                deviceInfoList.add(DeviceInfoItem("Device ID", result.deviceId))
+                deviceInfoList.add(DeviceInfoItem("Android ID", result.androidId ?: "Unavailable"))
+                deviceInfoList.add(DeviceInfoItem("GSF ID", result.gsfId ?: "Unavailable"))
+                deviceInfoList.add(
+                    DeviceInfoItem(
+                        "Media DRM ID",
+                        result.mediaDrmId ?: "Unavailable"
+                    )
+                )
+            }
+            val signals = fingerPrinter.getFingerprintingSignalsProvider()?.getSignalsMatching(
+                version = Fingerprinter.Version.V_5,
+                stabilityLevel = StabilityLevel.STABLE
+            ).orEmpty()
+            signals.mapIndexed { _, signal ->
+                val data = signal.toFingerprintItemData()
+                deviceInfoList.add(DeviceInfoItem(data.signalName, data.signalValue.toString()))
+            }
+            deviceInfoList.add(DeviceInfoItem("Is Mute", isMute(context).toString()))
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Current Audio Volume",
-                    CustomUtils.getCurrentAudioVolume(context, AudioManager.STREAM_MUSIC).toString()
+                    getCurrentAudioVolume(context, AudioManager.STREAM_MUSIC).toString()
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Battery Charging",
-                    CustomUtils.isBatteryCharging(context).toString()
+                    isBatteryCharging(context).toString()
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Battery Health",
-                    CustomUtils.getBatteryHealth(context).toString()
+                    getBatteryHealth(context).toString()
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Battery Level",
-                    CustomUtils.getBatteryLevel(context).toString()
+                    getBatteryLevel(context).toString()
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Battery Temperature",
-                    CustomUtils.getBatteryTemperature(context).toString()
+                    getBatteryTemperature(context).toString()
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Battery Voltage",
-                    CustomUtils.getBatteryVoltage(context).toString()
+                    getBatteryVoltage(context).toString()
                 )
             )
-            deviceInfoList.add(
-                DeviceInfoItem(
-                    "Cellular ID",
-                    CustomUtils.getCellularId(context) ?: ""
-                )
-            )
+
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Free Storage",
-                    CustomUtils.getFreeStorage().toString()
+                    getFreeStorage().toString()
                 )
             )
-            deviceInfoList.add(DeviceInfoItem("Source", CustomUtils.getSource().toString()))
+            deviceInfoList.add(DeviceInfoItem("Source", getSource().toString()))
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Last Boot Time",
-                    CustomUtils.getLastBootTime().toString()
+                    getLastBootTime().toString()
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Network Config",
-                    CustomUtils.getNetworkConfig(context)
+                    getNetworkConfig(context)
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Screen Brightness",
-                    CustomUtils.getScreenBrightness(context).toString()
+                    getScreenBrightness(context).toString()
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "System Uptime",
-                    CustomUtils.getSystemUptime().toString()
+                    getSystemUptime().toString()
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Wi-Fi Mac Address",
-                    CustomUtils.getWiFiMacAddress(context) ?: ""
+                    getWiFiMacAddress(context) ?: ""
                 )
             )
-//            deviceInfoList.add(DeviceInfoItem("Wi-Fi SSID", BatteryUtils.getWiFiSSID(context) ?: ""))
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Airplane Mode On",
-                    CustomUtils.isAirplaneModeOn(context).toString()
+                    isAirplaneModeOn(context).toString()
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Low Power Mode On",
-                    CustomUtils.isLowPowerModeOn(context).toString()
+                    isLowPowerModeOn(context).toString()
                 )
             )
-            deviceInfoList.add(DeviceInfoItem("Session ID", CustomUtils.generateSessionId()))
-            deviceInfoList.add(DeviceInfoItem("App GUID", CustomUtils.getAppGuid(context)))
-            deviceInfoList.add(DeviceInfoItem("App Version", CustomUtils.getAppVersion(context)))
+            deviceInfoList.add(DeviceInfoItem("Session ID", generateSessionId()))
+            deviceInfoList.add(DeviceInfoItem("App GUID", getAppGuid(context)))
+            deviceInfoList.add(DeviceInfoItem("App Version", getAppVersion(context)))
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Pasteboard Hash",
-                    CustomUtils.getPasteboardHash(context) ?: ""
+                    getPasteboardHash(context) ?: ""
                 )
             )
-            deviceInfoList.add(DeviceInfoItem("Sensor Hash", CustomUtils.getSensorHash(context)))
+            deviceInfoList.add(DeviceInfoItem("Sensor Hash", getSensorHash(context)))
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Screen Width",
-                    CustomUtils.getScreenWidth(context).toString()
+                    getScreenWidth(context).toString()
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Screen Height",
-                    CustomUtils.getScreenHeight(context).toString()
+                    getScreenHeight(context).toString()
                 )
             )
-            deviceInfoList.add(DeviceInfoItem("Type", CustomUtils.getType()))
-//            deviceInfoList.add(DeviceInfoItem("IMEI", BatteryUtils.getIMEI(context)))
-            deviceInfoList.add(DeviceInfoItem("CPU Speed", CustomUtils.getCPUSpeed()))
-            deviceInfoList.add(DeviceInfoItem("CPU Type", CustomUtils.getCPUType().toString()))
-            deviceInfoList.add(DeviceInfoItem("Device Name", CustomUtils.getDeviceName()))
+            deviceInfoList.add(DeviceInfoItem("Type", getType()))
+            deviceInfoList.add(DeviceInfoItem("CPU Speed", getCPUSpeed()))
+            deviceInfoList.add(DeviceInfoItem("CPU Type", getCPUType().toString()))
+            deviceInfoList.add(DeviceInfoItem("Device Name", getDeviceName()))
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Physical Memory",
-                    CustomUtils.getPhysicalMemory(context).toString()
+                    getPhysicalMemory(context).toString()
                 )
             )
-            deviceInfoList.add(DeviceInfoItem("Kernel Version", CustomUtils.getKernelVersion()))
-            deviceInfoList.add(DeviceInfoItem("Kernel Name", CustomUtils.getKernelName()))
-            deviceInfoList.add(DeviceInfoItem("Kernel Architecture", CustomUtils.getKernelArch()))
+            deviceInfoList.add(DeviceInfoItem("Kernel Version", getKernelVersion()))
+            deviceInfoList.add(DeviceInfoItem("Kernel Name", getKernelName()))
+            deviceInfoList.add(DeviceInfoItem("Kernel Architecture", getKernelArch()))
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Screen Scale",
-                    CustomUtils.getScreenScale(context).toString()
+                    getScreenScale(context).toString()
                 )
             )
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Mobile Number",
-                    CustomUtils.getMobileNumber(context) ?: ""
+                    getMobileNumber(context) ?: ""
                 )
             )
-//            deviceInfoList.add(DeviceInfoItem("Advertising ID", BatteryUtils.getAdvertisingId(context)))
-//            deviceInfoList.add(DeviceInfoItem("IMSI", BatteryUtils.getIMSI(context)))
-//            deviceInfoList.add(DeviceInfoItem("IMEI", BatteryUtils.getIMEI(context)))
-            deviceInfoList.add(DeviceInfoItem("Android Version", CustomUtils.getAndroidVersion()))
+            deviceInfoList.add(DeviceInfoItem("Android Version", getAndroidVersion()))
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Carrier Country",
-                    CustomUtils.getCarrierCountry(context)
+                    getCarrierCountry(context)
                 )
             )
-            deviceInfoList.add(DeviceInfoItem("Carrier Name", CustomUtils.getCarrierName(context)))
-            deviceInfoList.add(DeviceInfoItem("Is Emulator", CustomUtils.isEmulator().toString()))
-            deviceInfoList.add(DeviceInfoItem("Is Rooted", CustomUtils.isRooted().toString()))
-            deviceInfoList.add(DeviceInfoItem("Region Country", CustomUtils.getRegionCountry()))
-            deviceInfoList.add(DeviceInfoItem("Region Language", CustomUtils.getRegionLanguage()))
-            deviceInfoList.add(DeviceInfoItem("Region Timezone", CustomUtils.getRegionTimezone()))
-            deviceInfoList.add(DeviceInfoItem("Build Device", CustomUtils.getBuildDevice()))
-            deviceInfoList.add(DeviceInfoItem("Build ID", CustomUtils.getBuildId()))
+            deviceInfoList.add(DeviceInfoItem("Carrier Name", getCarrierName(context)))
+            deviceInfoList.add(DeviceInfoItem("Is Emulator", isEmulator().toString()))
+            deviceInfoList.add(DeviceInfoItem("Is Rooted", isRooted().toString()))
+            deviceInfoList.add(DeviceInfoItem("Region Country", getRegionCountry()))
+            deviceInfoList.add(DeviceInfoItem("Region Language", getRegionLanguage()))
+            deviceInfoList.add(DeviceInfoItem("Region Timezone", getRegionTimezone()))
+            deviceInfoList.add(DeviceInfoItem("Build Device", getBuildDevice()))
+            deviceInfoList.add(DeviceInfoItem("Build ID", getBuildId()))
             deviceInfoList.add(
                 DeviceInfoItem(
                     "Build Manufacturer",
-                    CustomUtils.getBuildManufacturer()
+                    getBuildManufacturer()
                 )
             )
-            deviceInfoList.add(DeviceInfoItem("Build Time", CustomUtils.getBuildTime().toString()))
-
+            deviceInfoList.add(DeviceInfoItem("Build Time", getBuildTime().toString()))
+            val json = convertListToJson(deviceInfoList)
             return deviceInfoList
         }
+
+        public fun convertListToJson(deviceInfoList: List<DeviceInfoItem>): String {
+            val map = deviceInfoList.associate { it.title to it.detail }
+            val gson = Gson()
+            return gson.toJson(map)
+        }
+
+
 
         public fun isMute(context: Context): Boolean {
             val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -254,10 +276,9 @@ public class CustomUtils {
             return batteryStatus?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1) ?: -1
         }
 
-        // Requires READ_PHONE_STATE permission and potentially carrier privileges
-        public fun getCellularId(context: Context): String? {
+        public fun getCellularId(context: Context): String {
             val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-            return telephonyManager.cellLocation?.toString()
+            return telephonyManager.deviceId
         }
 
         public fun getFreeStorage(): Long {
@@ -268,7 +289,6 @@ public class CustomUtils {
         public fun getSource(): Int {
             return Build.VERSION.SDK_INT
         }
-
 
         public fun getLastBootTime(): Long {
             return System.currentTimeMillis() - SystemClock.elapsedRealtime()
@@ -287,7 +307,6 @@ public class CustomUtils {
             return SystemClock.uptimeMillis()
         }
 
-        // Requires ACCESS_WIFI_STATE permission
         public fun getWiFiMacAddress(context: Context): String? {
             val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
             val info: WifiInfo? = wifiManager.connectionInfo
@@ -432,11 +451,6 @@ public class CustomUtils {
             return telephonyManager.line1Number
         }
 
-        public fun getAdvertisingId(context: Context): String {
-            val adInfo = AdvertisingIdClient.getAdvertisingIdInfo(context)
-            return adInfo.id ?: ""
-        }
-
         public fun getIMSI(context: Context): String {
             val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
             return telephonyManager.subscriberId ?: ""
@@ -505,6 +519,5 @@ public class CustomUtils {
         public fun getBuildTime(): Long {
             return Build.TIME
         }
-
     }
 }
