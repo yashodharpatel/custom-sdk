@@ -30,8 +30,6 @@ internal class FingerprinterImpl internal constructor(
 
     private var OSResult: OSResult? = null
 
-    private var CPUResult: CPUResult? = null
-
 
     @Volatile
     private var fingerprintResult: FingerprintResult? = null
@@ -74,25 +72,6 @@ internal class FingerprinterImpl internal constructor(
 
 
     @WorkerThread
-    @Deprecated(DeprecationMessages.DEPRECATED_SYMBOL)
-    fun getCPU(): Result<CPUResult> {
-        require(legacyArgs != null)
-
-        return safe {
-            CPUResult?.let { return@safe it }
-            val cpuResult = CPUResult(
-                fpSignalsProvider.procCpuInfoSignal.value,
-                fpSignalsProvider.procCpuInfoV2Signal.value,
-                fpSignalsProvider.abiTypeSignal.value,
-                fpSignalsProvider.coresCountSignal.value
-            )
-            this.CPUResult = cpuResult
-            cpuResult
-        }
-    }
-
-
-    @WorkerThread
     fun getDeviceId(version: Fingerprinter.Version): Result<DeviceIdResult> {
         return safe {
             DeviceIdResult(
@@ -112,18 +91,6 @@ internal class FingerprinterImpl internal constructor(
                 android = OSSignalsProvider.androidVersion(),
                 sdk = OSSignalsProvider.sdkVersion(),
                 fingerprint = OSSignalsProvider.fingerprint(),
-            )
-        }
-    }
-
-    @WorkerThread
-    fun getCPU(version: Fingerprinter.Version): Result<CPUResult> {
-        return safe {
-            CPUResult(
-                cpuInfo = fpSignalsProvider.procCpuInfoSignal.value,
-                cpuInfo2 = fpSignalsProvider.procCpuInfoV2Signal.value,
-                abiType = fpSignalsProvider.abiTypeSignal.value,
-                coreCount = fpSignalsProvider.coresCountSignal.value,
             )
         }
     }
