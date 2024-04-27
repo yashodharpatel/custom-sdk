@@ -1,4 +1,4 @@
-package com.fingerprintjs.android.fingerprint.custom_info
+package com.fingerprintjs.android.fingerprint.api
 
 import retrofit2.Call
 import retrofit2.http.Body
