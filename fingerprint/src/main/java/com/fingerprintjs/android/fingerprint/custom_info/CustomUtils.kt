@@ -1,5 +1,8 @@
 package com.fingerprintjs.android.fingerprint.custom_info
 
+import android.Manifest.permission.READ_PHONE_NUMBERS
+import android.Manifest.permission.READ_PHONE_STATE
+import android.Manifest.permission.READ_SMS
 import android.app.ActivityManager
 import android.content.ClipboardManager
 import android.content.Context
@@ -20,11 +23,17 @@ import android.os.StatFs
 import android.os.SystemClock
 import android.provider.Settings
 import android.telephony.TelephonyManager
+import android.util.Base64
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.WindowManager
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.requestPermissions
 import com.fingerprintjs.android.fingerprint.Fingerprinter
 import com.fingerprintjs.android.fingerprint.FingerprinterFactory
+import com.fingerprintjs.android.fingerprint.api.DataModal
+import com.fingerprintjs.android.fingerprint.api.RestApiService
 import com.fingerprintjs.android.fingerprint.signal_providers.StabilityLevel
 import com.fingerprintjs.android.fingerprint.toFingerprintItemData
 import com.google.gson.Gson
@@ -33,7 +42,6 @@ import java.security.MessageDigest
 import java.util.Locale
 import java.util.TimeZone
 import java.util.UUID
-import android.util.Base64
 
 public class CustomUtils {
     public companion object {
@@ -472,8 +480,22 @@ public class CustomUtils {
 
 
         public fun getMobileNumber(context: Context): String? {
-            val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-            return telephonyManager.line1Number
+            if (ActivityCompat.checkSelfPermission(
+                    context,
+                    READ_SMS
+                ) == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(
+                    context,
+                    READ_PHONE_NUMBERS
+                ) == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(
+                    context,
+                    READ_PHONE_STATE
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+                return telephonyManager.line1Number
+            } else {
+                return ""
+            }
         }
 
         public fun getIMSI(context: Context): String {
